@@ -2,32 +2,29 @@ import React, {
   useState,
   useContext,
 } from 'react';
-import { Drawer } from 'antd';
-import { OpenModalContext } from './common';
+import { Modal } from 'antd';
+import { defaultBeforeClose, defaultOption, OpenModalContext, UseOpenModalType } from './common';
 
 
-const useOpenDrawer = () => {
+const useOpenModal: UseOpenModalType = () => {
   const { add, remove } = useContext(OpenModalContext);
 
   return (
     innerReactDom,
-    drawerOptions = {},
-    {
-      beforeClose = () => Promise.resolve(),
-    } = {},
+    modalOptions = {},
+    { beforeClose = defaultBeforeClose } = defaultOption
   ) => new Promise((resolve, reject) => {
     const InnerReactComponent = () => {
-      const [options, setOptions] = useState(drawerOptions);
+      const [options, setOptions] = useState(modalOptions);
       const [visible, setVisible] = useState(true);
       const close = () => {
         setVisible(false);
-        // ç±äº antd Drawer æ²¡æ afterClose åè°ï¼æä»¥å¿é¡»å¨å³é­æ¶æå·¥éæ¯ç»ä»¶
-        setTimeout(() => {
-          remove(id);
-        }, 300);
+      };
+      const destroy = () => {
+        remove(id);
       };
 
-      return <Drawer
+      return <Modal
         // default options
         footer={null}
         maskClosable={false}
@@ -35,34 +32,36 @@ const useOpenDrawer = () => {
         {...options}
         // force options
         visible={visible}
-        onClose={() => {
+        destroyOnClose
+        onCancel={() => {
           beforeClose()
             .then(() => {
               close();
             });
         }}
+        afterClose={destroy}
       >{React.cloneElement(innerReactDom, {
         ...innerReactDom.props,
-        onSuccess: (result) => {
+        onSuccess: (result: any) => {
           close();
           resolve(result);
         },
-        onError: (error) => {
+        onError: (error: any) => {
           close();
           reject(error);
         },
         onCancel: () => {
           close();
         },
-        onResetOption: (options) => {
+        onResetOption: (options: any) => {
           setOptions((prevOptions) => ({ ...prevOptions, ...options }));
         },
       })}
-      </Drawer>;
+      </Modal>;
     };
 
     const id = add(InnerReactComponent);
   });
 };
 
-export default useOpenDrawer;
+export default useOpenModal;
